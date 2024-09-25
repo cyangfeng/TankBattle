@@ -256,6 +256,26 @@ class EnemyTank(Tank):
                 self.fire()
                 self.last_fire_time = pygame.time.get_ticks()
 
+class Explosion:
+    def __init__(self, pos):
+        self.images = [pygame.image.load(f'images/explosion{i}.png') for i in range(1, 6)]
+        self.index = 0
+        self.pos = pos
+        self.active = True
+
+        #缩放图片
+        for i in range(len(self.images)):
+            self.images[i] = pygame.transform.scale(self.images[i], (TANK_WIDTH, TANK_HEIGHT))
+
+    def update(self):
+        self.index += 1
+        if self.index >= len(self.images):
+            self.active = False
+
+    def draw(self, screen):
+        if self.active:
+            screen.blit(self.images[self.index], self.pos)
+
 #中央基地
 class BasePlace(Body):
     def __init__(self, pos):
@@ -288,6 +308,8 @@ def main():
     tank = PlayerTank([275, 225])
     #敌人坦克list
     enemyTanks = []
+    #初始化爆炸列表
+    explosions = []
     #随机生成5个敌人坦克, 避免重叠, 不能和玩家坦克重叠
     for i in range(5):
         enemyTank = EnemyTank([random.randint(0, SCREEN_WIDTH - TANK_WIDTH), random.randint(0, SCREEN_HEIGHT - TANK_HEIGHT)])
@@ -386,6 +408,7 @@ def main():
                 if pygame.Rect(enemyTank.pos[0], enemyTank.pos[1], TANK_WIDTH, TANK_HEIGHT).colliderect(pygame.Rect(bullet.pos[0], bullet.pos[1], BULLET_WIDTH, BULLET_HEIGHT)):
                     tank.bullets.remove(bullet)
                     enemyTanks.remove(enemyTank)
+                    explosions.append(Explosion(enemyTank.pos))
                     score += 100
 
         #敌人子弹和玩家坦克碰撞检测
@@ -394,6 +417,7 @@ def main():
                 if pygame.Rect(tank.pos[0], tank.pos[1], TANK_WIDTH, TANK_HEIGHT).colliderect(pygame.Rect(bullet.pos[0], bullet.pos[1], BULLET_WIDTH, BULLET_HEIGHT)):
                     enemyTank.bullets.remove(bullet)
                     tank.decreaseLife()
+                    explosions.append(Explosion(tank.pos))
 
         #玩家子弹和敌人子弹碰撞检测
         for bullet in tank.bullets:
@@ -426,6 +450,10 @@ def main():
                 enemyTank.display(screen)
             #显示基地
             #base.display(screen)
+            #显示爆炸
+            for explosion in explosions:
+                explosion.update()
+                explosion.draw(screen)
 
         pygame.display.update()
 
